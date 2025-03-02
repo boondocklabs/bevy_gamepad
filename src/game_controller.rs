@@ -12,7 +12,7 @@ use objc2::rc::Retained;
 use objc2_foundation::{NSNotification, NSNotificationCenter, NSObjectNSScriptClassDescription};
 use objc2_game_controller::{
     GCController, GCControllerDidConnectNotification, GCControllerDidDisconnectNotification,
-    GCControllerPlayerIndex, GCDevice, GCExtendedGamepad,
+    GCControllerPlayerIndex, GCDevice, GCDevicePhysicalInput as _, GCExtendedGamepad,
 };
 use std::{
     ptr::NonNull,
@@ -79,12 +79,12 @@ impl AppleGameController {
                 GamepadButton::C => 0.0,
                 GamepadButton::Z => 0.0,
                 GamepadButton::LeftTrigger => pad.leftTrigger().value(),
-                GamepadButton::LeftTrigger2 => 0.0,
+                GamepadButton::LeftTrigger2 => pad.leftShoulder().value(),
                 GamepadButton::RightTrigger => pad.rightTrigger().value(),
-                GamepadButton::RightTrigger2 => 0.0,
-                GamepadButton::Select => 0.0,
-                GamepadButton::Start => 0.0,
-                GamepadButton::Mode => pad.buttonMenu().value(),
+                GamepadButton::RightTrigger2 => pad.rightShoulder().value(),
+                GamepadButton::Select => pad.buttonOptions().map(|b| b.value()).unwrap_or(0.0),
+                GamepadButton::Start => pad.buttonMenu().value(),
+                GamepadButton::Mode => pad.buttonHome().map(|b| b.value()).unwrap_or(0.0),
                 GamepadButton::LeftThumb => pad.leftThumbstickButton().unwrap().value(),
                 GamepadButton::RightThumb => pad.rightThumbstickButton().unwrap().value(),
                 GamepadButton::DPadUp => pad.dpad().up().value(),
@@ -200,30 +200,36 @@ impl AppleGameController {
         let next_controller_id = Arc::new(AtomicUsize::new(0));
 
         unsafe {
-            /*
+            #[cfg(debug_assertions)]
             let value_changed = StackBlock::new(
-                |gamepad: NonNull<GCExtendedGamepad>, event: NonNull<GCControllerElement>| {
+                |gamepad: NonNull<GCExtendedGamepad>,
+                 event: NonNull<objc2_game_controller::GCControllerElement>| {
                     let gamepad = gamepad.as_ref();
                     let event = event.as_ref();
 
-                    trace!("Value changed callback {:?} {:?}", gamepad, event);
+                    debug!("Value changed callback {:?} {:?}", gamepad, event);
                 },
             );
 
+            #[cfg(debug_assertions)]
             let input_changed = StackBlock::new(
-                |device: NonNull<ProtocolObject<dyn GCDevicePhysicalInput>>,
-                 element: NonNull<ProtocolObject<dyn GCPhysicalInputElement>>| {
-                    trace!(
+                |device: NonNull<
+                    objc2::runtime::ProtocolObject<
+                        dyn objc2_game_controller::GCDevicePhysicalInput,
+                    >,
+                >,
+                 element: NonNull<
+                    objc2::runtime::ProtocolObject<
+                        dyn objc2_game_controller::GCPhysicalInputElement,
+                    >,
+                >| {
+                    debug!(
                         "Input changed {:#?} {:#?}",
                         device.as_ref(),
                         element.as_ref()
                     );
                 },
             );
-            */
-
-            GCController::setShouldMonitorBackgroundEvents(true);
-            GCController::startWirelessControllerDiscoveryWithCompletionHandler(None);
 
             let connect_tx = tx.clone();
             let notification_center = NSNotificationCenter::defaultCenter();
@@ -237,16 +243,18 @@ impl AppleGameController {
                     };
 
                     if let Some(controller) = object.downcast_ref::<GCController>() {
-                        /*
-                        // Regester a change handler block on GCControllerLiveInput
-                        let input = controller.input();
-                        input.setElementValueDidChangeHandler(Some(&input_changed));
+                        // On debug builds, register a callback to log element value changes
+                        #[cfg(debug_assertions)]
+                        {
+                            // Regester a change handler block on GCControllerLiveInput
+                            let input = controller.input();
+                            input.setElementValueDidChangeHandler(Some(&input_changed));
 
-                        controller
-                            .extendedGamepad()
-                            .unwrap()
-                            .setValueChangedHandler(&*value_changed as *const _ as *mut _);
-                        */
+                            controller
+                                .extendedGamepad()
+                                .unwrap()
+                                .setValueChangedHandler(&*value_changed as *const _ as *mut _);
+                        }
 
                         let class_name = controller.className().to_string();
                         let vendor_name = controller
@@ -262,7 +270,10 @@ impl AppleGameController {
                         let event = AppleGameControllerEvent::Connected {
                             id: controller.playerIndex().0 as GamepadId,
                             connection: GamepadConnection::Connected {
-                                name: format!("{class_name} {vendor_name}"),
+                                name: format!(
+                                    "{class_name} {vendor_name} {}",
+                                    controller.playerIndex().0 as GamepadId
+                                ),
                                 vendor_id: None,
                                 product_id: None,
                             },
@@ -296,7 +307,8 @@ impl AppleGameController {
                 }),
             );
 
-            for _controller in GCController::controllers() {}
+            GCController::setShouldMonitorBackgroundEvents(true);
+            GCController::startWirelessControllerDiscoveryWithCompletionHandler(None);
         }
     }
 }

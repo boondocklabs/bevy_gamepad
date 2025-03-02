@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_gamepad"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bevy",
  "block2 0.6.0",
