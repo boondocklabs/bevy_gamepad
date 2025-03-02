@@ -14,14 +14,15 @@ crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 objc2 = "0.6.0"
 objc2-foundation = "0.3.0"
 objc2-game-controller = "0.3.0"
-bevy_app = "0.15"
-bevy_input = "0.15"
-bevy_ecs = "0.15"
-bevy_utils = "0.15"
-bevy_log = "0.15"
+bevy_app = { git = "https://github.com/boondocklabs/bevy", branch = "dev" }
+bevy_input = { git = "https://github.com/boondocklabs/bevy", branch = "dev" }
+bevy_ecs = { git = "https://github.com/boondocklabs/bevy", branch = "dev" }
+bevy_utils = { git = "https://github.com/boondocklabs/bevy", branch = "dev" }
+bevy_log = { git = "https://github.com/boondocklabs/bevy", branch = "dev" }
+bevy_platform_support = { git = "https://github.com/boondocklabs/bevy", branch = "dev" }
 
 [dev-dependencies]
-bevy = { version = "0.15", default-features = false, features = [
+bevy = { git = "https://github.com/boondocklabs/bevy", branch = "dev", default-features = false, features = [
     "android-game-activity",
     "android_shared_stdcxx",
     "animation",

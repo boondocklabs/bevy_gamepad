@@ -55,14 +55,14 @@ impl AppleGameController {
                 AppleGameControllerEvent::Connected { id, connection } => {
                     let entity = commands.spawn_empty().id();
                     gamepad_index.gamepad.insert(id, entity);
-                    writer.send(GamepadConnectionEvent {
+                    writer.write(GamepadConnectionEvent {
                         gamepad: entity,
                         connection,
                     });
                 }
                 AppleGameControllerEvent::Disconnected { id } => {
                     if let Some(entity) = gamepad_index.gamepad.remove(&id) {
-                        writer.send(GamepadConnectionEvent {
+                        writer.write(GamepadConnectionEvent {
                             gamepad: entity,
                             connection: GamepadConnection::Disconnected,
                         });
@@ -150,7 +150,7 @@ impl AppleGameController {
                                                         value: new_value,
                                                     };
 
-                                                    events.send(RawGamepadEvent::Axis(axis_event));
+                                                    events.write(RawGamepadEvent::Axis(axis_event));
                                                 }
                                             }
                                             GamepadInput::Button(gamepad_button) => {
@@ -165,7 +165,7 @@ impl AppleGameController {
                                                             value: new_value,
                                                         };
 
-                                                    events.send(RawGamepadEvent::Button(
+                                                    events.write(RawGamepadEvent::Button(
                                                         button_event,
                                                     ));
                                                 }
