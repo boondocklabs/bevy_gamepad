@@ -5,7 +5,7 @@ edition = "2024"
 license-file = "LICENSE"
 description = "Apple Game Controller Framework Integration plugin for Bevy"
 repository = "https://github.com/boondocklabs/bevy_gamepad"
-keywords = ["gamedev", "bevy", "joystick", "gamepad", "apple", "macos", "ios"]
+keywords = ["gamedev", "bevy", "joystick", "gamepad", "apple"]
 categories = ["game-development", "game-engines", "hardware-support"]
 
 [dependencies]
