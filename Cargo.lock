@@ -571,9 +571,14 @@ dependencies = [
 
 [[package]]
 name = "bevy_gamepad"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "bevy",
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_input",
+ "bevy_log",
+ "bevy_utils",
  "block2 0.6.0",
  "crossbeam",
  "objc2 0.6.0",

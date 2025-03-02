@@ -1,4 +1,6 @@
-use bevy::{prelude::*, utils::HashMap};
+use bevy_app::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_utils::HashMap;
 use game_controller::{AppleGameController, AppleGameControllerEvent};
 
 mod game_controller;

@@ -1,10 +1,13 @@
-use bevy::{
-    input::gamepad::{
+use bevy_app::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_input::{
+    gamepad::{
         GamepadConnection, GamepadConnectionEvent, GamepadInput, RawGamepadAxisChangedEvent,
         RawGamepadButtonChangedEvent, RawGamepadEvent,
     },
     prelude::*,
 };
+use bevy_log::prelude::*;
 
 use block2::StackBlock;
 use crossbeam::channel::{Receiver, unbounded};
