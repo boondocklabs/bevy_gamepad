@@ -65,13 +65,13 @@ impl ApplePlatformProfile for DualSenseProfile {
 
             if button == &*self.0.rightShoulder() {
                 return Some(ButtonChange::new(
-                    GamepadButton::RightTrigger2,
+                    GamepadButton::RightTrigger,
                     button.value(),
                 ));
             }
             if button == &*self.0.leftShoulder() {
                 return Some(ButtonChange::new(
-                    GamepadButton::LeftTrigger2,
+                    GamepadButton::LeftTrigger,
                     button.value(),
                 ));
             }
@@ -83,13 +83,13 @@ impl ApplePlatformProfile for DualSenseProfile {
             if let Some(trigger) = button.downcast_ref::<GCDualSenseAdaptiveTrigger>() {
                 if trigger == &*self.0.rightTrigger() {
                     return Some(ButtonChange::new(
-                        GamepadButton::RightTrigger,
+                        GamepadButton::RightTrigger2,
                         button.value(),
                     ));
                 }
                 if trigger == &*self.0.leftTrigger() {
                     return Some(ButtonChange::new(
-                        GamepadButton::LeftTrigger,
+                        GamepadButton::LeftTrigger2,
                         button.value(),
                     ));
                 }
@@ -180,13 +180,13 @@ impl ApplePlatformProfile for DualShockProfile {
             }
             if button == &*self.0.rightShoulder() {
                 return Some(ButtonChange::new(
-                    GamepadButton::RightTrigger2,
+                    GamepadButton::RightTrigger,
                     button.value(),
                 ));
             }
             if button == &*self.0.leftShoulder() {
                 return Some(ButtonChange::new(
-                    GamepadButton::LeftTrigger2,
+                    GamepadButton::LeftTrigger,
                     button.value(),
                 ));
             }
@@ -199,13 +199,13 @@ impl ApplePlatformProfile for DualShockProfile {
 
             if button == &*self.0.rightTrigger() {
                 return Some(ButtonChange::new(
-                    GamepadButton::RightTrigger,
+                    GamepadButton::RightTrigger2,
                     button.value(),
                 ));
             }
             if button == &*self.0.leftTrigger() {
                 return Some(ButtonChange::new(
-                    GamepadButton::LeftTrigger,
+                    GamepadButton::LeftTrigger2,
                     button.value(),
                 ));
             }
@@ -375,26 +375,26 @@ impl ApplePlatformProfile for GenericProfile {
             }
             if button == &*self.0.rightShoulder() {
                 return Some(ButtonChange::new(
-                    GamepadButton::RightTrigger2,
+                    GamepadButton::RightTrigger,
                     button.value(),
                 ));
             }
             if button == &*self.0.leftShoulder() {
                 return Some(ButtonChange::new(
-                    GamepadButton::LeftTrigger2,
+                    GamepadButton::LeftTrigger,
                     button.value(),
                 ));
             }
 
             if button == &*self.0.rightTrigger() {
                 return Some(ButtonChange::new(
-                    GamepadButton::RightTrigger,
+                    GamepadButton::RightTrigger2,
                     button.value(),
                 ));
             }
             if button == &*self.0.leftTrigger() {
                 return Some(ButtonChange::new(
-                    GamepadButton::LeftTrigger,
+                    GamepadButton::LeftTrigger2,
                     button.value(),
                 ));
             }
