@@ -1,7 +1,7 @@
 use bevy::{color::palettes::tailwind::*, prelude::*, window::PrimaryWindow};
 use bevy_gamepad::GamepadPlugin;
 use bevy_input::gamepad::GamepadConnectionEvent;
-use bevy_utils::HashMap;
+use bevy_platform_support::collections::HashMap;
 
 fn main() {
     App::new()
@@ -92,7 +92,7 @@ fn update_layout(
             }
             bevy_input::gamepad::GamepadConnection::Disconnected => {
                 if let Some(content) = map.remove(&event.gamepad) {
-                    commands.entity(content).despawn_recursive();
+                    commands.entity(content).despawn();
                 }
             }
         }
@@ -101,7 +101,7 @@ fn update_layout(
 
 fn update_text(mut commands: Commands, query: Query<(&Gamepad, &GamepadContainer)>) {
     for (gamepad, container) in query.iter() {
-        if let Some(mut container) = commands.get_entity(container.container) {
+        if let Ok(mut container) = commands.get_entity(container.container) {
             let mut text = format!(
                 "DPad: {}\nLeft\n{}\nRight {}\n",
                 gamepad.dpad(),
