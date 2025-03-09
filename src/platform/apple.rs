@@ -5,7 +5,7 @@ use bevy_input::gamepad::GamepadConnection;
 use bevy_log::{debug, error, info, trace, warn};
 use block2::StackBlock;
 use crossbeam::channel::Sender;
-use objc2::{ClassType, rc::Retained};
+use objc2::rc::Retained;
 use objc2_foundation::{NSNotification, NSNotificationCenter};
 use objc2_game_controller::{
     GCController, GCControllerDidConnectNotification, GCControllerDidDisconnectNotification,
@@ -126,7 +126,7 @@ impl AppleGameControllerPlatform {
         if let Some(vendor_name) = vendor_name {
             debug!(name = vendor_name, "Matching gamepad from vendor");
             match vendor_name.as_str() {
-                "Pro Controller" => Box::new(SwitchProfile(gamepad)),
+                "Pro Controller" | "Joy-Con (L/R)" => Box::new(SwitchProfile(gamepad)),
                 _ => Box::new(GenericProfile(gamepad)),
             }
         } else {
