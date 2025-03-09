@@ -7,13 +7,13 @@ This should also work on iOS devices, but is currently untested.
 
 ## Supported Controllers
 
-The Game Controller framework limits support of controllers.
-Apple silicon devices do not support wired USB gamepads, thus these are all over bluetooth connections.
+The Game Controller framework limits support of controllers to those supported by Apple.
 
-- Nintendo Switch Pro Controller (tested)
-- Nintendo Switch JoyCon
-- 8BitDo Ultimate Bluetooth (Switch Pro compatible, tested)
-- XBox
+### Known working controllers
+- Nintendo Switch Pro Controller
+- Nintendo Switch JoyCon  - Both left and right JoyCons must be paired and will show up as a single gamepad
+- 8BitDo Ultimate Bluetooth (Switch Pro compatible)
+- Xbox
 - DualShock 4
 - DualSense
 
@@ -24,6 +24,7 @@ Apple silicon devices do not support wired USB gamepads, thus these are all over
 - Assigns `playerIndex` enabling LED player displays on controllers
 - Maps gamepad buttons and axes to Bevy's input system
 - Uses Bevy's event system to handle gamepad interactions
+- Asyncronous change detection handled by GC framework
 
 
 ## Installation
