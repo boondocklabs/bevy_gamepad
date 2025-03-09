@@ -2,10 +2,10 @@ mod profiles;
 
 use bevy_app::App;
 use bevy_input::gamepad::GamepadConnection;
-use bevy_log::{error, info, trace, warn};
+use bevy_log::{debug, error, info, trace, warn};
 use block2::StackBlock;
 use crossbeam::channel::Sender;
-use objc2::rc::Retained;
+use objc2::{ClassType, rc::Retained};
 use objc2_foundation::{NSNotification, NSNotificationCenter};
 use objc2_game_controller::{
     GCController, GCControllerDidConnectNotification, GCControllerDidDisconnectNotification,
@@ -13,7 +13,8 @@ use objc2_game_controller::{
     GCMicroGamepad, GCXboxGamepad,
 };
 use profiles::{
-    ApplePlatformProfile, DualSenseProfile, DualShockProfile, GenericProfile, XboxProfile,
+    ApplePlatformProfile, DualSenseProfile, DualShockProfile, GenericProfile, SwitchProfile,
+    XboxProfile,
 };
 use std::{ptr::NonNull, sync::Arc};
 
@@ -98,10 +99,39 @@ impl AppleGameControllerPlatform {
                     Ok(gamepad) => Box::new(XboxProfile(gamepad)),
                     Err(gamepad) => match gamepad.downcast::<GCMicroGamepad>() {
                         Ok(_) => todo!(),
-                        Err(gamepad) => Box::new(GenericProfile(gamepad)),
+                        Err(gamepad) => Self::select_vendor_profile(gamepad),
                     },
                 },
             },
+        }
+    }
+
+    /// Selects a profile based on the vendor string for controllers which don't have an explicit interface
+    fn select_vendor_profile(
+        gamepad: Retained<GCExtendedGamepad>,
+    ) -> Box<dyn ApplePlatformProfile> {
+        let vendor_name = unsafe {
+            if let Some(device) = gamepad.device() {
+                if let Ok(controller) = device.downcast::<GCController>() {
+                    controller.vendorName().map(|name| name.to_string())
+                } else {
+                    warn!("Downcast to GCController failed");
+                    None
+                }
+            } else {
+                None
+            }
+        };
+
+        if let Some(vendor_name) = vendor_name {
+            debug!(name = vendor_name, "Matching gamepad from vendor");
+            match vendor_name.as_str() {
+                "Pro Controller" => Box::new(SwitchProfile(gamepad)),
+                _ => Box::new(GenericProfile(gamepad)),
+            }
+        } else {
+            warn!("Failed to get vendor name from GCController. Falling back to GenericProfile.");
+            Box::new(GenericProfile(gamepad))
         }
     }
 

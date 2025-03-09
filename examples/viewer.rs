@@ -103,7 +103,7 @@ fn update_text(mut commands: Commands, query: Query<(&Gamepad, &GamepadContainer
     for (gamepad, container) in query.iter() {
         if let Some(mut container) = commands.get_entity(container.container) {
             let mut text = format!(
-                "DPad: {}\nLeft\n{}\nRight {}\n",
+                "DPad: {}\nLeft {}\nRight {}\n",
                 gamepad.dpad(),
                 gamepad.left_stick(),
                 gamepad.right_stick(),
@@ -115,7 +115,7 @@ fn update_text(mut commands: Commands, query: Query<(&Gamepad, &GamepadContainer
             }
 
             for button in gamepad.get_pressed() {
-                text.push_str(&format!("{button:?} "));
+                text.push_str(&format!("{button:?}\n"));
             }
             container.insert(Text::new(text));
         }

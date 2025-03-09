@@ -349,10 +349,10 @@ impl ApplePlatformProfile for XboxProfile {
     }
 }
 
-pub struct GenericProfile(pub Retained<GCExtendedGamepad>);
-impl Profile for GenericProfile {}
+pub struct SwitchProfile(pub Retained<GCExtendedGamepad>);
+impl Profile for SwitchProfile {}
 
-impl ApplePlatformProfile for GenericProfile {
+impl ApplePlatformProfile for SwitchProfile {
     fn button_changed(&self, button: &GCControllerButtonInput) -> Option<ButtonChange> {
         unsafe {
             if button == &*self.0.buttonA() {
@@ -365,6 +365,108 @@ impl ApplePlatformProfile for GenericProfile {
                 return Some(ButtonChange::new(GamepadButton::North, button.value()));
             }
             if button == &*self.0.buttonY() {
+                return Some(ButtonChange::new(GamepadButton::West, button.value()));
+            }
+            if button == &*self.0.buttonMenu() {
+                return Some(ButtonChange::new(GamepadButton::Start, button.value()));
+            }
+            if let Some(options) = self.0.buttonOptions() {
+                if button == &*options {
+                    return Some(ButtonChange::new(GamepadButton::Select, button.value()));
+                }
+            }
+            if let Some(left_thumb) = self.0.leftThumbstickButton() {
+                if button == &*left_thumb {
+                    return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
+                }
+            }
+            if let Some(right_thumb) = self.0.rightThumbstickButton() {
+                if button == &*right_thumb {
+                    return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
+                }
+            }
+            if button == &*self.0.rightShoulder() {
+                return Some(ButtonChange::new(
+                    GamepadButton::RightTrigger,
+                    button.value(),
+                ));
+            }
+            if button == &*self.0.leftShoulder() {
+                return Some(ButtonChange::new(
+                    GamepadButton::LeftTrigger,
+                    button.value(),
+                ));
+            }
+
+            if button == &*self.0.rightTrigger() {
+                return Some(ButtonChange::new(
+                    GamepadButton::RightTrigger2,
+                    button.value(),
+                ));
+            }
+            if button == &*self.0.leftTrigger() {
+                return Some(ButtonChange::new(
+                    GamepadButton::LeftTrigger2,
+                    button.value(),
+                ));
+            }
+
+            if let Some(name) = button.localizedName() {
+                if name.to_string() == "Share Button" {
+                    return Some(ButtonChange::new(GamepadButton::C, button.value()));
+                }
+            }
+        }
+        None
+    }
+
+    fn axis_changed(&self, axis: &GCControllerDirectionPad) -> Option<Changed> {
+        unsafe {
+            if axis == &*self.0.leftThumbstick() {
+                return Some(Changed::DualAxis {
+                    x_axis: GamepadAxis::LeftStickX,
+                    x_value: axis.xAxis().value(),
+                    y_axis: GamepadAxis::LeftStickY,
+                    y_value: axis.yAxis().value(),
+                });
+            }
+            if axis == &*self.0.rightThumbstick() {
+                return Some(Changed::DualAxis {
+                    x_axis: GamepadAxis::RightStickX,
+                    x_value: axis.xAxis().value(),
+                    y_axis: GamepadAxis::RightStickY,
+                    y_value: axis.yAxis().value(),
+                });
+            }
+            if axis == &*self.0.dpad() {
+                return Some(Changed::DPad(DPadChange::new(
+                    axis.up().value(),
+                    axis.down().value(),
+                    axis.left().value(),
+                    axis.right().value(),
+                )));
+            }
+            None
+        }
+    }
+}
+
+pub struct GenericProfile(pub Retained<GCExtendedGamepad>);
+impl Profile for GenericProfile {}
+
+impl ApplePlatformProfile for GenericProfile {
+    fn button_changed(&self, button: &GCControllerButtonInput) -> Option<ButtonChange> {
+        unsafe {
+            if button == &*self.0.buttonB() {
+                return Some(ButtonChange::new(GamepadButton::East, button.value()));
+            }
+            if button == &*self.0.buttonA() {
+                return Some(ButtonChange::new(GamepadButton::South, button.value()));
+            }
+            if button == &*self.0.buttonY() {
+                return Some(ButtonChange::new(GamepadButton::North, button.value()));
+            }
+            if button == &*self.0.buttonX() {
                 return Some(ButtonChange::new(GamepadButton::West, button.value()));
             }
             if button == &*self.0.buttonMenu() {
