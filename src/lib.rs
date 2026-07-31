@@ -4,7 +4,7 @@ use bevy_input::gamepad::{
     GamepadButton, GamepadConnectionEvent, RawGamepadAxisChangedEvent,
     RawGamepadButtonChangedEvent, RawGamepadEvent,
 };
-use bevy_utils::HashMap;
+use bevy_platform::collections::HashMap;
 use crossbeam::channel::{Receiver, unbounded};
 use platform::{AppleGameControllerPlatform, GamepadPlatformEvent, Platform as _};
 
@@ -43,8 +43,8 @@ pub(crate) type GamepadId = usize;
 fn platform_system(
     mut commands: Commands,
     mut handler: ResMut<GamepadPlatformHandler>,
-    mut connection_writer: EventWriter<GamepadConnectionEvent>,
-    mut gamepad_events: EventWriter<RawGamepadEvent>,
+    mut connection_writer: MessageWriter<GamepadConnectionEvent>,
+    mut gamepad_events: MessageWriter<RawGamepadEvent>,
 ) {
     while let Ok(event) = handler.rx.try_recv() {
         match event {
@@ -56,7 +56,7 @@ fn platform_system(
             GamepadPlatformEvent::Connected { id, connection } => {
                 let entity = commands.spawn_empty().id();
                 handler.index.insert(id, entity);
-                connection_writer.send(GamepadConnectionEvent {
+                connection_writer.write(GamepadConnectionEvent {
                     gamepad: entity,
                     connection,
                 });
@@ -64,7 +64,7 @@ fn platform_system(
 
             GamepadPlatformEvent::Disconnected { id } => {
                 if let Some(entity) = handler.index.get(&id) {
-                    connection_writer.send(GamepadConnectionEvent {
+                    connection_writer.write(GamepadConnectionEvent {
                         gamepad: *entity,
                         connection: bevy_input::gamepad::GamepadConnection::Disconnected,
                     });
@@ -72,8 +72,11 @@ fn platform_system(
             }
 
             GamepadPlatformEvent::InputChanged { id, change } => {
+                // `continue`, not `return`: an event for an unknown gamepad
+                // must skip only itself, or one stale id silently discards
+                // every input still queued behind it this frame.
                 let Some(gamepad) = handler.index.get(&id) else {
-                    return;
+                    continue;
                 };
 
                 match change {
@@ -84,7 +87,7 @@ fn platform_system(
                             value: button_change.value(),
                         };
 
-                        gamepad_events.send(RawGamepadEvent::Button(event));
+                        gamepad_events.write(RawGamepadEvent::Button(event));
                     }
 
                     profile::Changed::DPad(dpad_change) => {
@@ -109,10 +112,10 @@ fn platform_system(
                             value: dpad_change.right(),
                         };
 
-                        gamepad_events.send(RawGamepadEvent::Button(up_event));
-                        gamepad_events.send(RawGamepadEvent::Button(down_event));
-                        gamepad_events.send(RawGamepadEvent::Button(left_event));
-                        gamepad_events.send(RawGamepadEvent::Button(right_event));
+                        gamepad_events.write(RawGamepadEvent::Button(up_event));
+                        gamepad_events.write(RawGamepadEvent::Button(down_event));
+                        gamepad_events.write(RawGamepadEvent::Button(left_event));
+                        gamepad_events.write(RawGamepadEvent::Button(right_event));
                     }
 
                     profile::Changed::DualAxis {
@@ -133,8 +136,8 @@ fn platform_system(
                             value: y_value,
                         };
 
-                        gamepad_events.send(RawGamepadEvent::Axis(x_event));
-                        gamepad_events.send(RawGamepadEvent::Axis(y_event));
+                        gamepad_events.write(RawGamepadEvent::Axis(x_event));
+                        gamepad_events.write(RawGamepadEvent::Axis(y_event));
                     }
 
                     profile::Changed::SingleAxis { axis, value } => {
@@ -144,7 +147,7 @@ fn platform_system(
                             value,
                         };
 
-                        gamepad_events.send(RawGamepadEvent::Axis(event));
+                        gamepad_events.write(RawGamepadEvent::Axis(event));
                     }
                 }
             }
