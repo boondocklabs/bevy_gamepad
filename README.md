@@ -1,48 +1,5 @@
 # Apple Game Controller Framework Integration plugin for Bevy
 
-> **Fork note.** This is a fork of [boondocklabs/bevy_gamepad](https://github.com/boondocklabs/bevy_gamepad)
-> (MIT), updated for **Bevy 0.19** and fixed for controllers that were already
-> paired before the app launched. Changes over upstream 0.1.3:
->
-> - **Bevy 0.15 → 0.19**: buffered events became messages (`EventWriter` →
->   `MessageWriter`, `send` → `write`), `bevy_utils::HashMap` moved to
->   `bevy_platform::collections`, and `bevy_input`'s gamepad module is now
->   behind its `gamepad` feature.
-> - **Adopts already-connected controllers.** `GCControllerDidConnectNotification`
->   only fires for pads connected *after* launch, and `GCController::controllers()`
->   is empty until the run loop has turned over — so a pad paired beforehand was
->   never picked up at all. A per-frame reconcile pass now adopts any controller
->   whose player index is still unset.
-> - **Identifies controllers by `productCategory`, not just `vendorName`.**
->   `vendorName` is whatever the manufacturer chose: a Switch-layout 8BitDo
->   reports `"8Bitdo 2"`, matched no arm, and silently fell back to a layout with
->   the face buttons in the wrong places. `productCategory` is Apple's normalised
->   classification (`"Switch Pro Controller"`).
-> - **No panics across the FFI boundary.** Channel sends inside Objective-C
->   callbacks no longer `unwrap()`; unwinding out of a callback is UB, and the
->   receiver is legitimately gone during shutdown.
-> - **One bad event no longer drops the rest.** `platform_system` used `return`
->   where it meant `continue`, discarding every input still queued behind an
->   event for an unknown gamepad.
->
-> Verified on macOS 26 with an 8BitDo pad in Switch Pro mode — the exact case
-> where `gilrs` reads nothing, because it consumes OS-*parsed* HID elements and
-> a Switch pad's report descriptor does not describe the reports it sends.
->
->
-> - **Exposes an `AppleGamepad` marker** on every gamepad entity it creates,
->   so an app running this beside `bevy_gilrs` can tell the backends apart.
->
-> **Running alongside `bevy_gilrs`.** You can, and usually should — gilrs
-> still covers the plain-HID devices Apple's framework does not recognise,
-> such as GameCube adapters and arcade sticks. One caveat: `bevy_gilrs`'
-> rumble system unwraps the gilrs id of whatever gamepad a rumble request
-> names, so it panics on entities created by another backend. Filter your
-> rumble requests with `Without<AppleGamepad>` until that is fixed upstream.
-> If you would rather not run both, disable gilrs with
-> `DefaultPlugins.build().disable::<bevy::gilrs::GilrsPlugin>()`.
-
-
 This project provides integration for Apple Game Controllers with the Bevy game engine, as an alternative to the builtin Gilrs based gamepad interface.
 It enables Bevy to detect, connect, and handle input events from Apple-compatible game controllers using `objc2` and `objc2_game_controller`.
 
@@ -68,6 +25,7 @@ The Game Controller framework limits support of controllers to those supported b
 - Maps gamepad buttons and axes to Bevy's input system
 - Uses Bevy's event system to handle gamepad interactions
 - Asyncronous change detection handled by GC framework
+- Rumble through CoreHaptics
 
 
 ## Installation
@@ -75,20 +33,33 @@ To use this integration in your Bevy project, add the following dependencies to 
 
 ```toml
 [dependencies]
-bevy_gamepad = "0.2"
+bevy_gamepad = "0.1"
 ```
 
-### Disable internal Gilrs Gamepad plugin
+### Running alongside the internal gilrs plugin
 
-Since gilrs is included by default, you either need to remove it from the features, or manually define the set of plugins loaded
-during application setup rather than using `DefaultPlugins` which includes gilrs. This could be conditional depending on the build target,
-only enabling the plugin when targeting MacOS/iOS.
+The two backends are additive — both feed the same `Gamepad` entities, and a
+pad that both of them see is harmless, since Bevy's input state merges the
+reports. Running both is usually what you want: gilrs still covers the
+plain-HID devices Apple's framework does not recognise, such as GameCube
+adapters and arcade sticks.
 
-The internal gilrs plugin can be disabled by setting `default-features = false` when importing `bevy`
-into your project, and setting all required features explicitly without the `gilrs` feature flag.
+The one thing that must not cross backends is **rumble**. `bevy_gilrs` reads
+every `GamepadRumbleRequest` regardless of which backend owns the gamepad and
+unwraps the gilrs id of whatever entity the request names, so a standard
+request aimed at one of this plugin's gamepads panics the app. That is why
+rumble here uses its own [`AppleRumbleRequest`] — see *Rumble* below.
 
+If you would rather not run both, disable gilrs when building the plugin group:
+
+```rust
+DefaultPlugins.build().disable::<bevy::gilrs::GilrsPlugin>()
 ```
-bevy = { git = "https://github.com/bevyengine/bevy", version = "0.16.0-dev", default-features = false, features = [...]
+
+or drop bevy's `gilrs` feature entirely:
+
+```toml
+bevy = { version = "0.19", default-features = false, features = [...] }
 ```
 
 ## Usage
@@ -105,3 +76,38 @@ fn main() {
         .run();
 }
 ```
+
+### Rumble
+
+Every gamepad this plugin creates carries an `AppleGamepad` marker, which is
+also how an app running both backends tells them apart. Shake one by writing
+an `AppleRumbleRequest`:
+
+```rust
+use bevy_gamepad::{AppleGamepad, AppleRumbleRequest};
+use std::time::Duration;
+
+fn rumble_on_hit(
+    pads: Query<Entity, With<AppleGamepad>>,
+    mut rumbles: MessageWriter<AppleRumbleRequest>,
+) {
+    for gamepad in pads.iter() {
+        rumbles.write(AppleRumbleRequest::Add {
+            gamepad,
+            duration: Duration::from_millis(90),
+            strong_motor: 0.7,
+            weak_motor: 0.9,
+        });
+    }
+}
+```
+
+Apple exposes no simple "set motor strength" call: rumble is CoreHaptics, so
+this asks the controller's `GCDeviceHaptics` for an engine bound to a
+*locality* (a physical actuator), builds a pattern and plays it. The two
+motors map onto the two handles — the strong, low-frequency motor is the left
+handle and the weak, high-frequency one the right. Engines are expensive to
+build, so they are cached per gamepad for the life of the controller.
+
+Controllers that expose no haptics are skipped silently; run with
+`RUST_LOG=bevy_gamepad=debug` to see which.
