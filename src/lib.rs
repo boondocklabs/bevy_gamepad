@@ -4,7 +4,7 @@ use bevy_input::gamepad::{
     GamepadButton, GamepadConnectionEvent, RawGamepadAxisChangedEvent,
     RawGamepadButtonChangedEvent, RawGamepadEvent,
 };
-use bevy_utils::HashMap;
+use bevy_platform::collections::HashMap;
 use crossbeam::channel::{Receiver, unbounded};
 use platform::{AppleGameControllerPlatform, GamepadPlatformEvent, Platform as _};
 
@@ -14,18 +14,34 @@ mod profile;
 
 pub struct GamepadPlugin;
 
+/// Marks a gamepad entity created by this plugin rather than by Bevy's
+/// built-in gilrs backend.
+///
+/// Both backends can run side by side — gilrs still covers the plain-HID
+/// devices Apple's framework does not recognise — which leaves apps needing
+/// to tell them apart. Anything routed through gilrs (rumble, most notably)
+/// must skip these entities: gilrs looks up its own id for the gamepad a
+/// request names and will not find one.
+#[derive(Component, Debug, Clone, Copy, Default)]
+pub struct AppleGamepad;
+
 #[derive(Resource)]
-struct GamepadPlatformHandler {
+pub(crate) struct GamepadPlatformHandler {
     /// Receive channel to receive events from platform drivers
     rx: Receiver<GamepadPlatformEvent>,
 
     /// Index of gamepad player index to bevy [`Gamepad`] entity
-    index: HashMap<GamepadId, Entity>,
+    pub(crate) index: HashMap<GamepadId, Entity>,
 }
+
+pub use platform::apple::haptics::AppleRumbleRequest;
 
 impl Plugin for GamepadPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreUpdate, platform_system);
+        app.add_systems(PreUpdate, platform_system)
+            .add_message::<AppleRumbleRequest>()
+            .init_non_send::<platform::apple::haptics::HapticEngines>()
+            .add_systems(PostUpdate, platform::apple::haptics::drive_rumble);
 
         let (tx, rx) = unbounded();
 
@@ -43,8 +59,8 @@ pub(crate) type GamepadId = usize;
 fn platform_system(
     mut commands: Commands,
     mut handler: ResMut<GamepadPlatformHandler>,
-    mut connection_writer: EventWriter<GamepadConnectionEvent>,
-    mut gamepad_events: EventWriter<RawGamepadEvent>,
+    mut connection_writer: MessageWriter<GamepadConnectionEvent>,
+    mut gamepad_events: MessageWriter<RawGamepadEvent>,
 ) {
     while let Ok(event) = handler.rx.try_recv() {
         match event {
@@ -54,9 +70,9 @@ fn platform_system(
             }
 
             GamepadPlatformEvent::Connected { id, connection } => {
-                let entity = commands.spawn_empty().id();
+                let entity = commands.spawn(AppleGamepad).id();
                 handler.index.insert(id, entity);
-                connection_writer.send(GamepadConnectionEvent {
+                connection_writer.write(GamepadConnectionEvent {
                     gamepad: entity,
                     connection,
                 });
@@ -64,7 +80,7 @@ fn platform_system(
 
             GamepadPlatformEvent::Disconnected { id } => {
                 if let Some(entity) = handler.index.get(&id) {
-                    connection_writer.send(GamepadConnectionEvent {
+                    connection_writer.write(GamepadConnectionEvent {
                         gamepad: *entity,
                         connection: bevy_input::gamepad::GamepadConnection::Disconnected,
                     });
@@ -72,8 +88,11 @@ fn platform_system(
             }
 
             GamepadPlatformEvent::InputChanged { id, change } => {
+                // `continue`, not `return`: an event for an unknown gamepad
+                // must skip only itself, or one stale id silently discards
+                // every input still queued behind it this frame.
                 let Some(gamepad) = handler.index.get(&id) else {
-                    return;
+                    continue;
                 };
 
                 match change {
@@ -84,7 +103,7 @@ fn platform_system(
                             value: button_change.value(),
                         };
 
-                        gamepad_events.send(RawGamepadEvent::Button(event));
+                        gamepad_events.write(RawGamepadEvent::Button(event));
                     }
 
                     profile::Changed::DPad(dpad_change) => {
@@ -109,10 +128,10 @@ fn platform_system(
                             value: dpad_change.right(),
                         };
 
-                        gamepad_events.send(RawGamepadEvent::Button(up_event));
-                        gamepad_events.send(RawGamepadEvent::Button(down_event));
-                        gamepad_events.send(RawGamepadEvent::Button(left_event));
-                        gamepad_events.send(RawGamepadEvent::Button(right_event));
+                        gamepad_events.write(RawGamepadEvent::Button(up_event));
+                        gamepad_events.write(RawGamepadEvent::Button(down_event));
+                        gamepad_events.write(RawGamepadEvent::Button(left_event));
+                        gamepad_events.write(RawGamepadEvent::Button(right_event));
                     }
 
                     profile::Changed::DualAxis {
@@ -133,8 +152,8 @@ fn platform_system(
                             value: y_value,
                         };
 
-                        gamepad_events.send(RawGamepadEvent::Axis(x_event));
-                        gamepad_events.send(RawGamepadEvent::Axis(y_event));
+                        gamepad_events.write(RawGamepadEvent::Axis(x_event));
+                        gamepad_events.write(RawGamepadEvent::Axis(y_event));
                     }
 
                     profile::Changed::SingleAxis { axis, value } => {
@@ -144,7 +163,7 @@ fn platform_system(
                             value,
                         };
 
-                        gamepad_events.send(RawGamepadEvent::Axis(event));
+                        gamepad_events.write(RawGamepadEvent::Axis(event));
                     }
                 }
             }

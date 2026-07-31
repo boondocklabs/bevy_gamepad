@@ -13,47 +13,22 @@ block2 = "0.6.0"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 objc2 = "0.6.0"
 objc2-foundation = "0.3.0"
-objc2-game-controller = "0.3.0"
-bevy_app = "0.15"
-bevy_input = "0.15"
-bevy_ecs = "0.15"
-bevy_utils = "0.15"
-bevy_log = "0.15"
+objc2-core-haptics = { version = "0.3", features = [
+    "CHHapticEngine", "CHHapticEvent", "CHHapticPattern",
+    "CHHapticPatternPlayer", "CHHapticParameter",
+] }
+objc2-game-controller = { version = "0.3.2", features = [
+    "GCController", "GCExtendedGamepad", "GCGamepad", "GCDevice", "GCMicroGamepad",
+    "GCDualSenseGamepad", "GCDualShockGamepad", "GCXboxGamepad",
+    "GCControllerButtonInput", "GCControllerAxisInput", "GCControllerDirectionPad",
+    "GCControllerElement", "GCPhysicalInputProfile", "GCDeviceHaptics", "objc2-core-haptics",
+] }
+bevy_app = "0.19"
+bevy_input = { version = "0.19", features = ["gamepad"] }
+bevy_ecs = "0.19"
+bevy_platform = "0.19"
+bevy_log = "0.19"
 thiserror = "2.0.12"
 
 [dev-dependencies]
-bevy = { version = "0.15", default-features = false, features = [
-    "android-game-activity",
-    "android_shared_stdcxx",
-    "animation",
-    "bevy_asset",
-    "bevy_audio",
-    "bevy_color",
-    "bevy_core_pipeline",
-    "bevy_gizmos",
-    "bevy_gltf",
-    "bevy_mesh_picking_backend",
-    "bevy_pbr",
-    "bevy_picking",
-    "bevy_render",
-    "bevy_scene",
-    "bevy_sprite",
-    "bevy_sprite_picking_backend",
-    "bevy_state",
-    "bevy_text",
-    "bevy_ui",
-    "bevy_ui_picking_backend",
-    "bevy_window",
-    "bevy_winit",
-    "custom_cursor",
-    "default_font",
-    "hdr",
-    "multi_threaded",
-    "png",
-    "smaa_luts",
-    "sysinfo_plugin",
-    "tonemapping_luts",
-    "vorbis",
-    "webgl2",
-    "x11",
-] }
+bevy = "0.19"

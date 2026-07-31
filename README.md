@@ -25,6 +25,7 @@ The Game Controller framework limits support of controllers to those supported b
 - Maps gamepad buttons and axes to Bevy's input system
 - Uses Bevy's event system to handle gamepad interactions
 - Asyncronous change detection handled by GC framework
+- Rumble through CoreHaptics
 
 
 ## Installation
@@ -32,20 +33,33 @@ To use this integration in your Bevy project, add the following dependencies to 
 
 ```toml
 [dependencies]
-bevy_gamepad = 0
+bevy_gamepad = "0.1"
 ```
 
-### Disable internal Gilrs Gamepad plugin
+### Running alongside the internal gilrs plugin
 
-Since gilrs is included by default, you either need to remove it from the features, or manually define the set of plugins loaded
-during application setup rather than using `DefaultPlugins` which includes gilrs. This could be conditional depending on the build target,
-only enabling the plugin when targeting MacOS/iOS.
+The two backends are additive — both feed the same `Gamepad` entities, and a
+pad that both of them see is harmless, since Bevy's input state merges the
+reports. Running both is usually what you want: gilrs still covers the
+plain-HID devices Apple's framework does not recognise, such as GameCube
+adapters and arcade sticks.
 
-The internal gilrs plugin can be disabled by setting `default-features = false` when importing `bevy`
-into your project, and setting all required features explicitly without the `gilrs` feature flag.
+The one thing that must not cross backends is **rumble**. `bevy_gilrs` reads
+every `GamepadRumbleRequest` regardless of which backend owns the gamepad and
+unwraps the gilrs id of whatever entity the request names, so a standard
+request aimed at one of this plugin's gamepads panics the app. That is why
+rumble here uses its own [`AppleRumbleRequest`] — see *Rumble* below.
 
+If you would rather not run both, disable gilrs when building the plugin group:
+
+```rust
+DefaultPlugins.build().disable::<bevy::gilrs::GilrsPlugin>()
 ```
-bevy = { git = "https://github.com/bevyengine/bevy", version = "0.16.0-dev", default-features = false, features = [...]
+
+or drop bevy's `gilrs` feature entirely:
+
+```toml
+bevy = { version = "0.19", default-features = false, features = [...] }
 ```
 
 ## Usage
@@ -62,3 +76,38 @@ fn main() {
         .run();
 }
 ```
+
+### Rumble
+
+Every gamepad this plugin creates carries an `AppleGamepad` marker, which is
+also how an app running both backends tells them apart. Shake one by writing
+an `AppleRumbleRequest`:
+
+```rust
+use bevy_gamepad::{AppleGamepad, AppleRumbleRequest};
+use std::time::Duration;
+
+fn rumble_on_hit(
+    pads: Query<Entity, With<AppleGamepad>>,
+    mut rumbles: MessageWriter<AppleRumbleRequest>,
+) {
+    for gamepad in pads.iter() {
+        rumbles.write(AppleRumbleRequest::Add {
+            gamepad,
+            duration: Duration::from_millis(90),
+            strong_motor: 0.7,
+            weak_motor: 0.9,
+        });
+    }
+}
+```
+
+Apple exposes no simple "set motor strength" call: rumble is CoreHaptics, so
+this asks the controller's `GCDeviceHaptics` for an engine bound to a
+*locality* (a physical actuator), builds a pattern and plays it. The two
+motors map onto the two handles — the strong, low-frequency motor is the left
+handle and the weak, high-frequency one the right. Engines are expensive to
+build, so they are cached per gamepad for the life of the controller.
+
+Controllers that expose no haptics are skipped silently; run with
+`RUST_LOG=bevy_gamepad=debug` to see which.
