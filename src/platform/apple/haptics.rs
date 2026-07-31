@@ -90,9 +90,14 @@ impl HapticEngines {
             };
             let engine = |locality: &objc2_game_controller::GCHapticsLocality| {
                 // Sent by hand: objc2-game-controller 0.3.2 gates
-                // `createEngineWithLocality:` to iOS/tvOS/visionOS, but Apple
-                // ships it on macOS 11+ too, so the generated binding is
-                // simply missing here. Reported upstream.
+                // `createEngineWithLocality:` to iOS/tvOS/visionOS, but
+                // Apple's own header says `API_AVAILABLE(macos(11.0), ...)`,
+                // so the generated binding is missing on the one platform
+                // this crate targets. The root cause was `objc2-core-haptics`
+                // being marked macOS-unavailable, which Apple's docs state
+                // incorrectly. Fixed upstream in objc2 9d7f436 (issue #853),
+                // landing in frameworks v0.4 — drop this and call the
+                // generated method once that releases.
                 let engine: Option<Retained<CHHapticEngine>> =
                     unsafe { msg_send![&*haptics, createEngineWithLocality: locality] };
                 let engine = engine?;
