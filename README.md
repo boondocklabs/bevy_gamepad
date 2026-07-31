@@ -29,9 +29,17 @@
 > where `gilrs` reads nothing, because it consumes OS-*parsed* HID elements and
 > a Switch pad's report descriptor does not describe the reports it sends.
 >
-> **Note:** this must *replace* `bevy_gilrs`, not accompany it. `bevy_gilrs`'
-> rumble system unwraps the gilrs id of whatever gamepad a rumble targets and
-> panics on entities created by another backend. Disable it with
+>
+> - **Exposes an `AppleGamepad` marker** on every gamepad entity it creates,
+>   so an app running this beside `bevy_gilrs` can tell the backends apart.
+>
+> **Running alongside `bevy_gilrs`.** You can, and usually should — gilrs
+> still covers the plain-HID devices Apple's framework does not recognise,
+> such as GameCube adapters and arcade sticks. One caveat: `bevy_gilrs`'
+> rumble system unwraps the gilrs id of whatever gamepad a rumble request
+> names, so it panics on entities created by another backend. Filter your
+> rumble requests with `Without<AppleGamepad>` until that is fixed upstream.
+> If you would rather not run both, disable gilrs with
 > `DefaultPlugins.build().disable::<bevy::gilrs::GilrsPlugin>()`.
 
 

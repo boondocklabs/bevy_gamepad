@@ -14,6 +14,17 @@ mod profile;
 
 pub struct GamepadPlugin;
 
+/// Marks a gamepad entity created by this plugin rather than by Bevy's
+/// built-in gilrs backend.
+///
+/// Both backends can run side by side — gilrs still covers the plain-HID
+/// devices Apple's framework does not recognise — which leaves apps needing
+/// to tell them apart. Anything routed through gilrs (rumble, most notably)
+/// must skip these entities: gilrs looks up its own id for the gamepad a
+/// request names and will not find one.
+#[derive(Component, Debug, Clone, Copy, Default)]
+pub struct AppleGamepad;
+
 #[derive(Resource)]
 struct GamepadPlatformHandler {
     /// Receive channel to receive events from platform drivers
@@ -54,7 +65,7 @@ fn platform_system(
             }
 
             GamepadPlatformEvent::Connected { id, connection } => {
-                let entity = commands.spawn_empty().id();
+                let entity = commands.spawn(AppleGamepad).id();
                 handler.index.insert(id, entity);
                 connection_writer.write(GamepadConnectionEvent {
                     gamepad: entity,
