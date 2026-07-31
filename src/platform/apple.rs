@@ -1,3 +1,4 @@
+pub(crate) mod haptics;
 mod profiles;
 
 use bevy_app::App;
@@ -46,8 +47,8 @@ impl AppleGameControllerPlatform {
             players.sort();
 
             // See if there's a gap in the indexes
-            for i in 0..players.len() {
-                if players[i] as usize != i {
+            for (i, player) in players.iter().enumerate() {
+                if *player as usize != i {
                     return GCControllerPlayerIndex(i as isize);
                 }
             }

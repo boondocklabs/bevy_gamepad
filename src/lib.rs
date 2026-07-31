@@ -26,17 +26,22 @@ pub struct GamepadPlugin;
 pub struct AppleGamepad;
 
 #[derive(Resource)]
-struct GamepadPlatformHandler {
+pub(crate) struct GamepadPlatformHandler {
     /// Receive channel to receive events from platform drivers
     rx: Receiver<GamepadPlatformEvent>,
 
     /// Index of gamepad player index to bevy [`Gamepad`] entity
-    index: HashMap<GamepadId, Entity>,
+    pub(crate) index: HashMap<GamepadId, Entity>,
 }
+
+pub use platform::apple::haptics::AppleRumbleRequest;
 
 impl Plugin for GamepadPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreUpdate, platform_system);
+        app.add_systems(PreUpdate, platform_system)
+            .add_message::<AppleRumbleRequest>()
+            .init_non_send::<platform::apple::haptics::HapticEngines>()
+            .add_systems(PostUpdate, platform::apple::haptics::drive_rumble);
 
         let (tx, rx) = unbounded();
 

@@ -13,11 +13,15 @@ block2 = "0.6.0"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 objc2 = "0.6.0"
 objc2-foundation = "0.3.0"
+objc2-core-haptics = { version = "0.3", features = [
+    "CHHapticEngine", "CHHapticEvent", "CHHapticPattern",
+    "CHHapticPatternPlayer", "CHHapticParameter",
+] }
 objc2-game-controller = { version = "0.3.2", features = [
     "GCController", "GCExtendedGamepad", "GCGamepad", "GCDevice", "GCMicroGamepad",
     "GCDualSenseGamepad", "GCDualShockGamepad", "GCXboxGamepad",
     "GCControllerButtonInput", "GCControllerAxisInput", "GCControllerDirectionPad",
-    "GCControllerElement", "GCPhysicalInputProfile",
+    "GCControllerElement", "GCPhysicalInputProfile", "GCDeviceHaptics", "objc2-core-haptics",
 ] }
 bevy_app = "0.19"
 bevy_input = { version = "0.19", features = ["gamepad"] }

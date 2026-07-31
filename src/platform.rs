@@ -3,7 +3,7 @@ use bevy_input::gamepad::GamepadConnection;
 use crossbeam::channel::Sender;
 
 use crate::{GamepadId, error::GamepadError, profile::Changed};
-mod apple;
+pub(crate) mod apple;
 
 pub use apple::AppleGameControllerPlatform;
 

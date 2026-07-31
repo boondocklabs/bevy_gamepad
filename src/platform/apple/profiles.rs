@@ -47,20 +47,20 @@ impl ApplePlatformProfile for DualSenseProfile {
             if button == &*self.0.buttonMenu() {
                 return Some(ButtonChange::new(GamepadButton::Start, button.value()));
             }
-            if let Some(options) = self.0.buttonOptions() {
-                if button == &*options {
-                    return Some(ButtonChange::new(GamepadButton::Select, button.value()));
-                }
+            if let Some(options) = self.0.buttonOptions()
+                && button == &*options
+            {
+                return Some(ButtonChange::new(GamepadButton::Select, button.value()));
             }
-            if let Some(left_thumb) = self.0.leftThumbstickButton() {
-                if button == &*left_thumb {
-                    return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
-                }
+            if let Some(left_thumb) = self.0.leftThumbstickButton()
+                && button == &*left_thumb
+            {
+                return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
             }
-            if let Some(right_thumb) = self.0.rightThumbstickButton() {
-                if button == &*right_thumb {
-                    return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
-                }
+            if let Some(right_thumb) = self.0.rightThumbstickButton()
+                && button == &*right_thumb
+            {
+                return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
             }
 
             if button == &*self.0.rightShoulder() {
@@ -169,20 +169,20 @@ impl ApplePlatformProfile for DualShockProfile {
             if button == &*self.0.buttonMenu() {
                 return Some(ButtonChange::new(GamepadButton::Start, button.value()));
             }
-            if let Some(options) = self.0.buttonOptions() {
-                if button == &*options {
-                    return Some(ButtonChange::new(GamepadButton::Select, button.value()));
-                }
+            if let Some(options) = self.0.buttonOptions()
+                && button == &*options
+            {
+                return Some(ButtonChange::new(GamepadButton::Select, button.value()));
             }
-            if let Some(left_thumb) = self.0.leftThumbstickButton() {
-                if button == &*left_thumb {
-                    return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
-                }
+            if let Some(left_thumb) = self.0.leftThumbstickButton()
+                && button == &*left_thumb
+            {
+                return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
             }
-            if let Some(right_thumb) = self.0.rightThumbstickButton() {
-                if button == &*right_thumb {
-                    return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
-                }
+            if let Some(right_thumb) = self.0.rightThumbstickButton()
+                && button == &*right_thumb
+            {
+                return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
             }
             if button == &*self.0.rightShoulder() {
                 return Some(ButtonChange::new(
@@ -197,10 +197,10 @@ impl ApplePlatformProfile for DualShockProfile {
                 ));
             }
 
-            if let Some(touchpad_button) = self.0.touchpadButton() {
-                if button == &*touchpad_button {
-                    return Some(ButtonChange::new(GamepadButton::C, button.value()));
-                }
+            if let Some(touchpad_button) = self.0.touchpadButton()
+                && button == &*touchpad_button
+            {
+                return Some(ButtonChange::new(GamepadButton::C, button.value()));
             }
 
             if button == &*self.0.rightTrigger() {
@@ -273,20 +273,20 @@ impl ApplePlatformProfile for XboxProfile {
             if button == &*self.0.buttonMenu() {
                 return Some(ButtonChange::new(GamepadButton::Start, button.value()));
             }
-            if let Some(options) = self.0.buttonOptions() {
-                if button == &*options {
-                    return Some(ButtonChange::new(GamepadButton::Select, button.value()));
-                }
+            if let Some(options) = self.0.buttonOptions()
+                && button == &*options
+            {
+                return Some(ButtonChange::new(GamepadButton::Select, button.value()));
             }
-            if let Some(left) = self.0.leftThumbstickButton() {
-                if button == &*left {
-                    return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
-                }
+            if let Some(left) = self.0.leftThumbstickButton()
+                && button == &*left
+            {
+                return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
             }
-            if let Some(right) = self.0.rightThumbstickButton() {
-                if button == &*right {
-                    return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
-                }
+            if let Some(right) = self.0.rightThumbstickButton()
+                && button == &*right
+            {
+                return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
             }
             if button == &*self.0.rightShoulder() {
                 return Some(ButtonChange::new(
@@ -370,20 +370,20 @@ impl ApplePlatformProfile for SwitchProfile {
             if button == &*self.0.buttonMenu() {
                 return Some(ButtonChange::new(GamepadButton::Start, button.value()));
             }
-            if let Some(options) = self.0.buttonOptions() {
-                if button == &*options {
-                    return Some(ButtonChange::new(GamepadButton::Select, button.value()));
-                }
+            if let Some(options) = self.0.buttonOptions()
+                && button == &*options
+            {
+                return Some(ButtonChange::new(GamepadButton::Select, button.value()));
             }
-            if let Some(left_thumb) = self.0.leftThumbstickButton() {
-                if button == &*left_thumb {
-                    return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
-                }
+            if let Some(left_thumb) = self.0.leftThumbstickButton()
+                && button == &*left_thumb
+            {
+                return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
             }
-            if let Some(right_thumb) = self.0.rightThumbstickButton() {
-                if button == &*right_thumb {
-                    return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
-                }
+            if let Some(right_thumb) = self.0.rightThumbstickButton()
+                && button == &*right_thumb
+            {
+                return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
             }
             if button == &*self.0.rightShoulder() {
                 return Some(ButtonChange::new(
@@ -411,10 +411,10 @@ impl ApplePlatformProfile for SwitchProfile {
                 ));
             }
 
-            if let Some(name) = button.localizedName() {
-                if name.to_string() == "Share Button" {
-                    return Some(ButtonChange::new(GamepadButton::C, button.value()));
-                }
+            if let Some(name) = button.localizedName()
+                && name.to_string() == "Share Button"
+            {
+                return Some(ButtonChange::new(GamepadButton::C, button.value()));
             }
         }
         None
@@ -472,20 +472,20 @@ impl ApplePlatformProfile for GenericProfile {
             if button == &*self.0.buttonMenu() {
                 return Some(ButtonChange::new(GamepadButton::Start, button.value()));
             }
-            if let Some(options) = self.0.buttonOptions() {
-                if button == &*options {
-                    return Some(ButtonChange::new(GamepadButton::Select, button.value()));
-                }
+            if let Some(options) = self.0.buttonOptions()
+                && button == &*options
+            {
+                return Some(ButtonChange::new(GamepadButton::Select, button.value()));
             }
-            if let Some(left_thumb) = self.0.leftThumbstickButton() {
-                if button == &*left_thumb {
-                    return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
-                }
+            if let Some(left_thumb) = self.0.leftThumbstickButton()
+                && button == &*left_thumb
+            {
+                return Some(ButtonChange::new(GamepadButton::LeftThumb, button.value()));
             }
-            if let Some(right_thumb) = self.0.rightThumbstickButton() {
-                if button == &*right_thumb {
-                    return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
-                }
+            if let Some(right_thumb) = self.0.rightThumbstickButton()
+                && button == &*right_thumb
+            {
+                return Some(ButtonChange::new(GamepadButton::RightThumb, button.value()));
             }
             if button == &*self.0.rightShoulder() {
                 return Some(ButtonChange::new(
@@ -513,10 +513,10 @@ impl ApplePlatformProfile for GenericProfile {
                 ));
             }
 
-            if let Some(name) = button.localizedName() {
-                if name.to_string() == "Share Button" {
-                    return Some(ButtonChange::new(GamepadButton::C, button.value()));
-                }
+            if let Some(name) = button.localizedName()
+                && name.to_string() == "Share Button"
+            {
+                return Some(ButtonChange::new(GamepadButton::C, button.value()));
             }
         }
         None
