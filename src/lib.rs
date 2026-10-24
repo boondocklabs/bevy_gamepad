@@ -30,7 +30,7 @@ pub(crate) struct GamepadPlatformHandler {
     /// Receive channel to receive events from platform drivers
     rx: Receiver<GamepadPlatformEvent>,
 
-    /// Index of gamepad player index to bevy [`Gamepad`] entity
+    /// Index of gamepad player index to Bevy [`bevy_input::gamepad::Gamepad`] entity
     pub(crate) index: HashMap<GamepadId, Entity>,
 }
 
@@ -167,6 +167,183 @@ fn platform_system(
                     }
                 }
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy_ecs::message::Messages;
+    use bevy_input::gamepad::{GamepadAxis, GamepadConnection};
+    use crossbeam::channel::Sender;
+    use profile::{ButtonChange, Changed, DPadChange};
+
+    // Exercise the Bevy message bridge without registering Objective-C callbacks
+    // or requiring a physical controller or window/run loop.
+    fn bridge() -> (App, Sender<GamepadPlatformEvent>) {
+        let (tx, rx) = unbounded();
+        let mut app = App::new();
+        app.add_message::<GamepadConnectionEvent>()
+            .add_message::<RawGamepadEvent>()
+            .insert_resource(GamepadPlatformHandler {
+                rx,
+                index: HashMap::default(),
+            })
+            .add_systems(Update, platform_system);
+        (app, tx)
+    }
+
+    fn connect(tx: &Sender<GamepadPlatformEvent>, id: GamepadId) {
+        tx.send(GamepadPlatformEvent::Connected {
+            id,
+            connection: GamepadConnection::Connected {
+                name: "Test controller".into(),
+                vendor_id: None,
+                product_id: None,
+            },
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn connections_create_distinct_marked_entities_and_route_disconnects() {
+        let (mut app, tx) = bridge();
+        connect(&tx, 0);
+        connect(&tx, 1);
+        tx.send(GamepadPlatformEvent::Disconnected { id: 0 })
+            .unwrap();
+        tx.send(GamepadPlatformEvent::Disconnected { id: 99 })
+            .unwrap();
+        app.update();
+
+        let handler = app.world().resource::<GamepadPlatformHandler>();
+        let first = handler.index[&0];
+        let second = handler.index[&1];
+        assert_ne!(first, second);
+        assert!(app.world().get::<AppleGamepad>(first).is_some());
+        assert!(app.world().get::<AppleGamepad>(second).is_some());
+        let events: Vec<_> = app
+            .world_mut()
+            .resource_mut::<Messages<GamepadConnectionEvent>>()
+            .drain()
+            .collect();
+        assert_eq!(events.len(), 3);
+        assert_eq!(events[0].gamepad, first);
+        assert_eq!(events[1].gamepad, second);
+        assert_eq!(events[2].gamepad, first);
+        assert!(matches!(
+            events[2].connection,
+            GamepadConnection::Disconnected
+        ));
+    }
+
+    #[test]
+    fn unknown_input_does_not_discard_later_button_or_axis_messages() {
+        let (mut app, tx) = bridge();
+        connect(&tx, 7);
+        for (id, change) in [
+            (
+                99,
+                Changed::Button(ButtonChange::new(GamepadButton::South, 1.0)),
+            ),
+            (
+                7,
+                Changed::Button(ButtonChange::new(GamepadButton::South, 0.75)),
+            ),
+            (
+                7,
+                Changed::DualAxis {
+                    x_axis: GamepadAxis::LeftStickX,
+                    x_value: -0.5,
+                    y_axis: GamepadAxis::LeftStickY,
+                    y_value: 0.25,
+                },
+            ),
+            (
+                7,
+                Changed::SingleAxis {
+                    axis: GamepadAxis::RightStickX,
+                    value: 0.5,
+                },
+            ),
+        ] {
+            tx.send(GamepadPlatformEvent::InputChanged { id, change })
+                .unwrap();
+        }
+        app.update();
+        let entity = app.world().resource::<GamepadPlatformHandler>().index[&7];
+        let events: Vec<_> = app
+            .world_mut()
+            .resource_mut::<Messages<RawGamepadEvent>>()
+            .drain()
+            .collect();
+        assert_eq!(events.len(), 4);
+        assert!(matches!(events[0], RawGamepadEvent::Button(e)
+            if e.gamepad == entity && e.button == GamepadButton::South && e.value == 0.75));
+        for (event, axis, value) in [
+            (&events[1], GamepadAxis::LeftStickX, -0.5),
+            (&events[2], GamepadAxis::LeftStickY, 0.25),
+            (&events[3], GamepadAxis::RightStickX, 0.5),
+        ] {
+            assert!(matches!(event, RawGamepadEvent::Axis(e)
+                if e.gamepad == entity && e.axis == axis && e.value == value));
+        }
+    }
+
+    #[test]
+    fn bevy_input_plugin_consumes_bridged_controller_messages() {
+        let (mut app, tx) = bridge();
+        app.add_plugins(bevy_input::InputPlugin);
+        connect(&tx, 0);
+        for change in [
+            Changed::Button(ButtonChange::new(GamepadButton::South, 1.0)),
+            Changed::SingleAxis {
+                axis: GamepadAxis::LeftStickX,
+                value: 0.8,
+            },
+        ] {
+            tx.send(GamepadPlatformEvent::InputChanged { id: 0, change })
+                .unwrap();
+        }
+        // The test bridge runs in Update, after InputPlugin's PreUpdate systems.
+        app.update();
+        app.update();
+        let entity = app.world().resource::<GamepadPlatformHandler>().index[&0];
+        let gamepad = app
+            .world()
+            .get::<bevy_input::gamepad::Gamepad>(entity)
+            .unwrap();
+        assert!(gamepad.pressed(GamepadButton::South));
+        assert!(gamepad.left_stick().x > 0.5);
+        assert!(app.world().get::<AppleGamepad>(entity).is_some());
+    }
+
+    #[test]
+    fn dpad_emits_all_four_buttons_including_releases() {
+        let (mut app, tx) = bridge();
+        connect(&tx, 0);
+        tx.send(GamepadPlatformEvent::InputChanged {
+            id: 0,
+            change: Changed::DPad(DPadChange::new(1.0, 0.0, 0.5, 0.0)),
+        })
+        .unwrap();
+        app.update();
+        let entity = app.world().resource::<GamepadPlatformHandler>().index[&0];
+        let events: Vec<_> = app
+            .world_mut()
+            .resource_mut::<Messages<RawGamepadEvent>>()
+            .drain()
+            .collect();
+        assert_eq!(events.len(), 4);
+        for (event, (button, value)) in events.iter().zip([
+            (GamepadButton::DPadUp, 1.0),
+            (GamepadButton::DPadDown, 0.0),
+            (GamepadButton::DPadLeft, 0.5),
+            (GamepadButton::DPadRight, 0.0),
+        ]) {
+            assert!(matches!(event, RawGamepadEvent::Button(e)
+                if e.gamepad == entity && e.button == button && e.value == value));
         }
     }
 }

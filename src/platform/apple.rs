@@ -66,6 +66,12 @@ impl AppleGameControllerPlatform {
         // Create a profile for a specific type of connected gamepad.
         // The profiles wrap the GCDualSenseGamepad, GCXboxGamepad etc to handle the mappings
         // back to bevy GamepadButton/GamepadAxis types
+        // block2 requires Clone captures when Objective-C copies the callback.
+        // Keep atomic reference counting for those framework-owned block copies.
+        #[allow(
+            clippy::arc_with_non_send_sync,
+            reason = "Objective-C block capture must be Clone; preserve atomic ownership for framework copies"
+        )]
         let profile = Arc::new(Self::get_gamepad_profile(gamepad.clone()));
 
         // Setup a change handler on the gamepad
