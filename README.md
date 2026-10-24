@@ -34,7 +34,7 @@ To use this integration in your Bevy project, add the following dependencies to 
 
 ```toml
 [dependencies]
-bevy_gamepad = "0.1"
+bevy_gamepad = "0.2"
 ```
 
 ### Running alongside the internal gilrs plugin
