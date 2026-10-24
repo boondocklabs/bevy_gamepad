@@ -6,14 +6,12 @@
 //! motors map onto the two handles — the strong, low-frequency motor is the
 //! left handle and the weak one the right.
 //!
-//! # Why a dedicated message rather than [`GamepadRumbleRequest`]
+//! # Backend-specific rumble
 //!
-//! `bevy_gilrs` reads every `GamepadRumbleRequest` regardless of which
-//! backend owns the gamepad, and unwraps the gilrs id of whatever entity the
-//! request names — so a standard request aimed at one of *our* gamepads
-//! panics the app before it ever reaches us. Apps running both backends
-//! therefore need a message gilrs does not read. Once that unwrap is fixed
-//! upstream this type can be dropped in favour of the standard one.
+//! [`bevy_input::gamepad::GamepadRumbleRequest`] targets Bevy's gilrs backend.
+//! Bevy 0.20 handles unknown gilrs entities without panicking, but does not
+//! route those requests to CoreHaptics. Keep [`AppleRumbleRequest`] for this
+//! backend so applications can select the appropriate rumble implementation.
 
 use bevy_ecs::prelude::*;
 use bevy_log::{debug, warn};

@@ -3,7 +3,8 @@
 This project provides integration for Apple Game Controllers with the Bevy game engine, as an alternative to the builtin Gilrs based gamepad interface.
 It enables Bevy to detect, connect, and handle input events from Apple-compatible game controllers using `objc2` and `objc2_game_controller`.
 
-This should also work on iOS devices, but is currently untested.
+Targets Bevy **0.20** and Rust **1.97.1** or newer on macOS. iOS support is
+currently untested. Other platforms are not supported by this Apple framework backend.
 
 ## Supported Controllers
 
@@ -38,17 +39,16 @@ bevy_gamepad = "0.1"
 
 ### Running alongside the internal gilrs plugin
 
-The two backends are additive — both feed the same `Gamepad` entities, and a
-pad that both of them see is harmless, since Bevy's input state merges the
-reports. Running both is usually what you want: gilrs still covers the
-plain-HID devices Apple's framework does not recognise, such as GameCube
-adapters and arcade sticks.
+Both backends can run together, but each creates its own `Gamepad` entities.
+A controller detected by both can therefore appear twice. Filter by
+`AppleGamepad` when you need this backend specifically, or disable gilrs to
+avoid duplicate input. Keeping gilrs enabled can cover HID devices that
+Apple's framework does not recognise.
 
-The one thing that must not cross backends is **rumble**. `bevy_gilrs` reads
-every `GamepadRumbleRequest` regardless of which backend owns the gamepad and
-unwraps the gilrs id of whatever entity the request names, so a standard
-request aimed at one of this plugin's gamepads panics the app. That is why
-rumble here uses its own [`AppleRumbleRequest`] — see *Rumble* below.
+Use `AppleRumbleRequest` for entities marked `AppleGamepad` and Bevy's
+`GamepadRumbleRequest` for gilrs entities. In Bevy 0.20, gilrs reports an
+unknown gamepad instead of panicking, but standard rumble requests still
+do not drive this plugin's CoreHaptics backend.
 
 If you would rather not run both, disable gilrs when building the plugin group:
 
@@ -59,7 +59,7 @@ DefaultPlugins.build().disable::<bevy::gilrs::GilrsPlugin>()
 or drop bevy's `gilrs` feature entirely:
 
 ```toml
-bevy = { version = "0.19", default-features = false, features = [...] }
+bevy = { version = "0.20", default-features = false, features = [...] }
 ```
 
 ## Usage
@@ -111,3 +111,22 @@ build, so they are cached per gamepad for the life of the controller.
 
 Controllers that expose no haptics are skipped silently; run with
 `RUST_LOG=bevy_gamepad=debug` to see which.
+
+## Development and CI
+
+On macOS with Rust 1.97.1 or newer:
+
+```sh
+cargo fmt --all -- --check
+cargo check --locked --all-targets
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked --all-targets
+cargo test --locked --doc
+RUSTDOCFLAGS="-D warnings" cargo doc --locked --no-deps
+```
+
+GitHub Actions runs these checks on macOS for pushes, pull requests, and
+manual dispatches. Tests inject platform messages without controller hardware.
+To check real connections, input, and CoreHaptics, run
+`cargo run --locked --example viewer` with a supported controller; CI does not
+validate physical devices or haptic output.

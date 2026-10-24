@@ -10,7 +10,7 @@ pub use apple::AppleGameControllerPlatform;
 /// Platform trait abstracts underlying platform gamepad interface
 /// * Currently only supports Apple Game Controller framework in [`AppleGameControllerPlatform`]
 pub trait Platform: Sized {
-    /// The type of handle to access a gamepad in [`GamepadHandle`]
+    /// The platform-specific handle used to access a gamepad.
     type Handle;
 
     /// Initialize a new platform driver. Called during plugin initialization.

@@ -2,6 +2,7 @@
 name = "bevy_gamepad"
 version = "0.1.3"
 edition = "2024"
+rust-version = "1.97.1"
 license-file = "LICENSE"
 description = "Apple Game Controller Framework Integration plugin for Bevy"
 repository = "https://github.com/boondocklabs/bevy_gamepad"
@@ -23,12 +24,12 @@ objc2-game-controller = { version = "0.3.2", features = [
     "GCControllerButtonInput", "GCControllerAxisInput", "GCControllerDirectionPad",
     "GCControllerElement", "GCPhysicalInputProfile", "GCDeviceHaptics", "objc2-core-haptics",
 ] }
-bevy_app = "0.19"
-bevy_input = { version = "0.19", features = ["gamepad"] }
-bevy_ecs = "0.19"
-bevy_platform = "0.19"
-bevy_log = "0.19"
+bevy_app = "0.20"
+bevy_input = { version = "0.20", features = ["gamepad"] }
+bevy_ecs = "0.20"
+bevy_platform = "0.20"
+bevy_log = "0.20"
 thiserror = "2.0.12"
 
 [dev-dependencies]
-bevy = "0.19"
+bevy = "0.20"
