@@ -1,6 +1,6 @@
 [package]
 name = "bevy_gamepad"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.97.1"
 license-file = "LICENSE"
@@ -10,11 +10,11 @@ keywords = ["gamedev", "bevy", "joystick", "gamepad", "apple"]
 categories = ["game-development", "game-engines", "hardware-support"]
 
 [dependencies]
-block2 = "0.6.0"
-crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
-objc2 = "0.6.0"
-objc2-foundation = "0.3.0"
-objc2-core-haptics = { version = "0.3", features = [
+block2 = "0.6.2"
+crossbeam = { version = "0.8.5", features = ["crossbeam-channel"] }
+objc2 = "0.6.5"
+objc2-foundation = "0.3.2"
+objc2-core-haptics = { version = "0.3.2", features = [
     "CHHapticEngine", "CHHapticEvent", "CHHapticPattern",
     "CHHapticPatternPlayer", "CHHapticParameter",
 ] }
@@ -29,7 +29,11 @@ bevy_input = { version = "0.20", features = ["gamepad"] }
 bevy_ecs = "0.20"
 bevy_platform = "0.20"
 bevy_log = "0.20"
-thiserror = "2.0.12"
+thiserror = "2.0.21"
 
 [dev-dependencies]
-bevy = "0.20"
+# The macOS viewer uses a window, UI text, 2D gizmos, and both gamepad backends.
+bevy = { version = "0.20", default-features = false, features = [
+    "std", "async_executor", "multi_threaded", "bevy_log", "bevy_winit",
+    "bevy_gilrs", "bevy_ui_render", "bevy_gizmos_render", "default_font",
+] }
