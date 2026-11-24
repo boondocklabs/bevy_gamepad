@@ -41,3 +41,21 @@ jobs:
         run: cargo test --locked --doc
       - name: Documentation
         run: cargo doc --locked --no-deps
+
+  tvos:
+    name: tvOS / Rust 1.100.0
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target/tvos
+      RUSTUP_TOOLCHAIN: 1.100.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust and tvOS target
+        run: rustup toolchain install 1.100.0 --profile minimal --target aarch64-apple-tvos --no-self-update
+      - uses: Swatinem/rust-cache@e9d7b9f1e587218970671bac74e5511ed9506e6a # v2
+      - name: Check tvOS library
+        run: cargo +1.100.0 check --manifest-path ci/tvos/Cargo.toml --locked --lib --target aarch64-apple-tvos

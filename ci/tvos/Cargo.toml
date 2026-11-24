@@ -1,0 +1,32 @@
+# Compile the library source against the tvOS-capable Bevy fork without changing
+# the crates.io dependencies or Rust version in the published manifest.
+[package]
+name = "bevy_gamepad_tvos_ci"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.100.0"
+
+[lib]
+path = "../../src/lib.rs"
+
+[dependencies]
+block2 = "0.6.2"
+crossbeam = { version = "0.8.5", features = ["crossbeam-channel"] }
+objc2 = "0.6.5"
+objc2-foundation = "0.3.2"
+objc2-core-haptics = { version = "0.3.2", features = [
+    "CHHapticEngine", "CHHapticEvent", "CHHapticPattern",
+    "CHHapticPatternPlayer", "CHHapticParameter",
+] }
+objc2-game-controller = { version = "0.3.2", features = [
+    "GCController", "GCExtendedGamepad", "GCGamepad", "GCDevice", "GCMicroGamepad",
+    "GCDualSenseGamepad", "GCDualShockGamepad", "GCXboxGamepad",
+    "GCControllerButtonInput", "GCControllerAxisInput", "GCControllerDirectionPad",
+    "GCControllerElement", "GCPhysicalInputProfile", "GCDeviceHaptics", "objc2-core-haptics",
+] }
+bevy_app = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6" }
+bevy_input = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6", features = ["gamepad"] }
+bevy_ecs = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6" }
+bevy_platform = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6" }
+bevy_log = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6" }
+thiserror = "2.0.21"

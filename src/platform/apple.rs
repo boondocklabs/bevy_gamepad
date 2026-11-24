@@ -14,8 +14,8 @@ use objc2_game_controller::{
     GCMicroGamepad, GCXboxGamepad,
 };
 use profiles::{
-    ApplePlatformProfile, DualSenseProfile, DualShockProfile, GenericProfile, SwitchProfile,
-    XboxProfile,
+    ApplePlatformProfile, DualSenseProfile, DualShockProfile, GenericProfile, MicroProfile,
+    SwitchProfile, XboxProfile,
 };
 use std::{ptr::NonNull, sync::Arc};
 
@@ -99,6 +99,29 @@ impl AppleGameControllerPlatform {
         }
     }
 
+    fn init_micro_gamepad(
+        id: GamepadId,
+        tx: Sender<GamepadPlatformEvent>,
+        gamepad: Retained<GCMicroGamepad>,
+    ) {
+        #[allow(
+            clippy::arc_with_non_send_sync,
+            reason = "Objective-C block capture must be Clone; preserve atomic ownership for framework copies"
+        )]
+        let profile = Arc::new(MicroProfile(gamepad.clone()));
+        unsafe {
+            let value_changed = StackBlock::new(
+                move |_gamepad: NonNull<GCMicroGamepad>,
+                      event: NonNull<objc2_game_controller::GCControllerElement>| {
+                    if let Some(change) = profile.element_changed(event.as_ref()) {
+                        let _ = tx.send(GamepadPlatformEvent::InputChanged { id, change });
+                    }
+                },
+            );
+            gamepad.setValueChangedHandler(&*value_changed as *const _ as *mut _);
+        }
+    }
+
     fn get_gamepad_profile(gamepad: Retained<GCExtendedGamepad>) -> Box<dyn ApplePlatformProfile> {
         match gamepad.downcast::<GCDualSenseGamepad>() {
             Ok(gamepad) => Box::new(DualSenseProfile(gamepad)),
@@ -106,13 +129,16 @@ impl AppleGameControllerPlatform {
                 Ok(gamepad) => Box::new(DualShockProfile(gamepad)),
                 Err(gamepad) => match gamepad.downcast::<GCXboxGamepad>() {
                     Ok(gamepad) => Box::new(XboxProfile(gamepad)),
-                    Err(gamepad) => match gamepad.downcast::<GCMicroGamepad>() {
-                        Ok(_) => todo!(),
-                        Err(gamepad) => Self::select_vendor_profile(gamepad),
-                    },
+                    Err(gamepad) => Self::select_vendor_profile(gamepad),
                 },
             },
         }
+    }
+
+    fn is_switch_layout(category: Option<&str>, vendor_name: Option<&str>) -> bool {
+        category
+            .is_some_and(|category| category.contains("Switch Pro") || category.contains("Joy-Con"))
+            || matches!(vendor_name, Some("Pro Controller" | "Joy-Con (L/R)"))
     }
 
     /// Selects a profile for controllers which expose no dedicated interface.
@@ -143,13 +169,12 @@ impl AppleGameControllerPlatform {
 
         if let Some(category) = &category {
             debug!(category, "Matching gamepad from product category");
-            if category.contains("Switch Pro") || category.contains("Joy-Con") {
-                return Box::new(SwitchProfile(gamepad));
-            }
+        }
+        if Self::is_switch_layout(category.as_deref(), vendor_name.as_deref()) {
+            return Box::new(SwitchProfile(gamepad));
         }
 
         match vendor_name.as_deref() {
-            Some("Pro Controller") | Some("Joy-Con (L/R)") => Box::new(SwitchProfile(gamepad)),
             Some(name) => {
                 debug!(name, "No specific profile; using the generic layout");
                 Box::new(GenericProfile(gamepad))
@@ -165,12 +190,18 @@ impl AppleGameControllerPlatform {
     /// handler, and announce it. Shared by the connect notification and the
     /// reconcile pass so both paths behave identically.
     fn attach_controller(controller: &GCController, tx: &Sender<GamepadPlatformEvent>) {
-        let Some(gamepad) = (unsafe { controller.extendedGamepad() }) else {
+        let extended = unsafe { controller.extendedGamepad() };
+        let micro = if extended.is_none() {
+            unsafe { controller.microGamepad() }
+        } else {
+            None
+        };
+        if extended.is_none() && micro.is_none() {
             let _ = tx.send(GamepadPlatformEvent::Error(GamepadError::Platform(
-                "Failed to get GCExtendedGamepad from GCController".into(),
+                "Controller has neither extended nor micro gamepad profile".into(),
             )));
             return;
-        };
+        }
 
         unsafe {
             // Mark unassigned first so this controller is excluded when
@@ -180,11 +211,20 @@ impl AppleGameControllerPlatform {
         }
 
         let id = unsafe { controller.playerIndex() }.0 as GamepadId;
-        Self::init_gamepad(id, tx.clone(), gamepad);
+        let remote = micro.is_some();
+        let has_extended = extended.is_some();
+        if let Some(gamepad) = extended {
+            Self::init_gamepad(id, tx.clone(), gamepad);
+        } else if let Some(gamepad) = micro {
+            Self::init_micro_gamepad(id, tx.clone(), gamepad);
+        }
 
         let vendor_name = unsafe { controller.vendorName() }
             .map(|name| name.to_string())
             .unwrap_or_else(|| String::from("Unknown Apple Gamepad"));
+        let category = unsafe { controller.productCategory().to_string() };
+        let switch_layout =
+            has_extended && Self::is_switch_layout(Some(&category), Some(&vendor_name));
 
         info!(name = vendor_name, index = id, "Connected");
 
@@ -195,6 +235,8 @@ impl AppleGameControllerPlatform {
                 vendor_id: None,
                 product_id: None,
             },
+            remote,
+            switch_layout,
         });
     }
 

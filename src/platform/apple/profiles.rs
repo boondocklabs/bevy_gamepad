@@ -3,7 +3,7 @@ use objc2::rc::Retained;
 use objc2_game_controller::{
     GCControllerButtonInput, GCControllerDirectionPad, GCControllerElement,
     GCDualSenseAdaptiveTrigger, GCDualSenseGamepad, GCDualShockGamepad, GCExtendedGamepad,
-    GCXboxGamepad,
+    GCMicroGamepad, GCXboxGamepad,
 };
 
 use crate::profile::{ButtonChange, Changed, DPadChange, Profile};
@@ -24,6 +24,40 @@ pub(crate) trait ApplePlatformProfile: Profile {
 
     fn button_changed(&self, button: &GCControllerButtonInput) -> Option<ButtonChange>;
     fn axis_changed(&self, axis: &GCControllerDirectionPad) -> Option<Changed>;
+}
+
+pub struct MicroProfile(pub Retained<GCMicroGamepad>);
+impl Profile for MicroProfile {}
+
+impl ApplePlatformProfile for MicroProfile {
+    fn button_changed(&self, button: &GCControllerButtonInput) -> Option<ButtonChange> {
+        unsafe {
+            if button == &*self.0.buttonA() {
+                return Some(ButtonChange::new(GamepadButton::South, button.value()));
+            }
+            if button == &*self.0.buttonX() {
+                return Some(ButtonChange::new(GamepadButton::West, button.value()));
+            }
+            if button == &*self.0.buttonMenu() {
+                return Some(ButtonChange::new(GamepadButton::Start, button.value()));
+            }
+        }
+        None
+    }
+
+    fn axis_changed(&self, axis: &GCControllerDirectionPad) -> Option<Changed> {
+        unsafe {
+            if axis == &*self.0.dpad() {
+                return Some(Changed::DPad(DPadChange::new(
+                    axis.up().value(),
+                    axis.down().value(),
+                    axis.left().value(),
+                    axis.right().value(),
+                )));
+            }
+        }
+        None
+    }
 }
 
 pub struct DualSenseProfile(pub Retained<GCDualSenseGamepad>);
