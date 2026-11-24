@@ -26,8 +26,6 @@ jobs:
           ref: ${{ github.event.release.tag_name }}
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@59a558e8c538bf4a23bbffa19e5a278b703f2920 # 1.97.1
-        with:
-          toolchain: 1.97.1
       - uses: Swatinem/rust-cache@e9d7b9f1e587218970671bac74e5511ed9506e6a # v2
       - name: Verify release tag matches crate version
         run: |
