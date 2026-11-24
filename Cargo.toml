@@ -24,16 +24,16 @@ objc2-game-controller = { version = "0.3.2", features = [
     "GCControllerButtonInput", "GCControllerAxisInput", "GCControllerDirectionPad",
     "GCControllerElement", "GCPhysicalInputProfile", "GCDeviceHaptics", "objc2-core-haptics",
 ] }
-bevy_app = "0.20"
-bevy_input = { version = "0.20", features = ["gamepad"] }
-bevy_ecs = "0.20"
-bevy_platform = "0.20"
-bevy_log = "0.20"
+bevy_app = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6" }
+bevy_input = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6", features = ["gamepad"] }
+bevy_ecs = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6" }
+bevy_platform = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6" }
+bevy_log = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6" }
 thiserror = "2.0.21"
 
 [dev-dependencies]
 # The macOS viewer uses a window, UI text, 2D gizmos, and both gamepad backends.
-bevy = { version = "0.20", default-features = false, features = [
+bevy = { git = "https://github.com/boondocklabs/bevy", rev = "b710ddbb72e70f8df38108772761483c38f86dc6", default-features = false, features = [
     "std", "async_executor", "multi_threaded", "bevy_log", "bevy_winit",
     "bevy_gilrs", "bevy_ui_render", "bevy_gizmos_render", "default_font",
 ] }
