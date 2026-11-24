@@ -25,6 +25,14 @@ pub struct GamepadPlugin;
 #[derive(Component, Debug, Clone, Copy, Default)]
 pub struct AppleGamepad;
 
+/// Marks a Siri Remote using Apple's micro gamepad profile.
+#[derive(Component, Debug, Clone, Copy, Default)]
+pub struct AppleRemote;
+
+/// Marks a Switch-layout controller so games can match its printed face-button labels.
+#[derive(Component, Debug, Clone, Copy, Default)]
+pub struct AppleSwitchGamepad;
+
 #[derive(Resource)]
 pub(crate) struct GamepadPlatformHandler {
     /// Receive channel to receive events from platform drivers
@@ -69,8 +77,20 @@ fn platform_system(
                 bevy_log::error!("{gamepad_error}");
             }
 
-            GamepadPlatformEvent::Connected { id, connection } => {
-                let entity = commands.spawn(AppleGamepad).id();
+            GamepadPlatformEvent::Connected {
+                id,
+                connection,
+                remote,
+                switch_layout,
+            } => {
+                let mut gamepad = commands.spawn(AppleGamepad);
+                if remote {
+                    gamepad.insert(AppleRemote);
+                }
+                if switch_layout {
+                    gamepad.insert(AppleSwitchGamepad);
+                }
+                let entity = gamepad.id();
                 handler.index.insert(id, entity);
                 connection_writer.write(GamepadConnectionEvent {
                     gamepad: entity,
@@ -202,6 +222,8 @@ mod tests {
                 vendor_id: None,
                 product_id: None,
             },
+            remote: false,
+            switch_layout: false,
         })
         .unwrap();
     }
@@ -236,6 +258,45 @@ mod tests {
             events[2].connection,
             GamepadConnection::Disconnected
         ));
+    }
+
+    #[test]
+    fn micro_gamepad_connection_marks_siri_remote() {
+        let (mut app, tx) = bridge();
+        tx.send(GamepadPlatformEvent::Connected {
+            id: 3,
+            connection: GamepadConnection::Connected {
+                name: "Remote".into(),
+                vendor_id: None,
+                product_id: None,
+            },
+            remote: true,
+            switch_layout: false,
+        })
+        .unwrap();
+        app.update();
+        let entity = app.world().resource::<GamepadPlatformHandler>().index[&3];
+        assert!(app.world().get::<AppleGamepad>(entity).is_some());
+        assert!(app.world().get::<AppleRemote>(entity).is_some());
+    }
+
+    #[test]
+    fn switch_connection_marks_switch_layout() {
+        let (mut app, tx) = bridge();
+        tx.send(GamepadPlatformEvent::Connected {
+            id: 4,
+            connection: GamepadConnection::Connected {
+                name: "Switch controller".into(),
+                vendor_id: None,
+                product_id: None,
+            },
+            remote: false,
+            switch_layout: true,
+        })
+        .unwrap();
+        app.update();
+        let entity = app.world().resource::<GamepadPlatformHandler>().index[&4];
+        assert!(app.world().get::<AppleSwitchGamepad>(entity).is_some());
     }
 
     #[test]

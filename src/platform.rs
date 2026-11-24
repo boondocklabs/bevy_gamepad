@@ -25,6 +25,8 @@ pub enum GamepadPlatformEvent {
     Connected {
         id: GamepadId,
         connection: GamepadConnection,
+        remote: bool,
+        switch_layout: bool,
     },
 
     Disconnected {

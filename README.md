@@ -3,8 +3,13 @@
 This project provides integration for Apple Game Controllers with the Bevy game engine, as an alternative to the builtin Gilrs based gamepad interface.
 It enables Bevy to detect, connect, and handle input events from Apple-compatible game controllers using `objc2` and `objc2_game_controller`.
 
-Targets Bevy **0.20** and Rust **1.97.1** or newer on macOS. iOS support is
+Targets Bevy **0.20** and Rust **1.97.1** or newer on macOS and tvOS. A tvOS
+application also needs a Bevy build that supports tvOS. iOS support is
 currently untested. Other platforms are not supported by this Apple framework backend.
+
+CI checks the published dependency set on macOS and compiles the library source
+for tvOS with Rust 1.100.0 and the pinned tvOS-capable Bevy fork in
+`ci/tvos/Cargo.toml`. The tvOS check does not link or run an Apple TV app.
 
 ## Supported Controllers
 
@@ -17,6 +22,13 @@ The Game Controller framework limits support of controllers to those supported b
 - Xbox
 - DualShock 4
 - DualSense
+- Siri Remote (micro gamepad profile on tvOS)
+
+The Siri Remote maps touch surface directions to Bevy D-pad buttons, click to
+`South`, Play/Pause to `West`, and Menu to `Start`. Remote entities carry both
+`AppleGamepad` and `AppleRemote`. Full controllers keep Bevy's position-based
+button mappings. Switch-layout controllers also carry `AppleSwitchGamepad`, so
+games can match the printed A/B/X/Y labels to East/South/North/West.
 
 
 ## Features
