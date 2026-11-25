@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+### Fixed
+
+- Build API documentation on docs.rs for Apple Silicon instead of Linux.
+
 ## 0.2.2
 
 ### Added
