@@ -1,6 +1,6 @@
 [package]
 name = "bevy_gamepad"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2024"
 rust-version = "1.97.1"
 license-file = "LICENSE"
@@ -8,6 +8,10 @@ description = "Apple Game Controller Framework Integration plugin for Bevy"
 repository = "https://github.com/boondocklabs/bevy_gamepad"
 keywords = ["gamedev", "bevy", "joystick", "gamepad", "apple"]
 categories = ["game-development", "game-engines", "hardware-support"]
+
+[package.metadata.docs.rs]
+default-target = "aarch64-apple-darwin"
+targets = []
 
 [dependencies]
 block2 = "0.6.2"
